@@ -4,7 +4,6 @@
 *.o
 *.su
 *.s
-tools
 libsrc
 *.i
 *.map
