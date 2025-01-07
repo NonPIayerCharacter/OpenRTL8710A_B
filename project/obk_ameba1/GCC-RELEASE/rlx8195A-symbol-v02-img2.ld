@@ -9,10 +9,8 @@ MEMORY
 {
   TCM (rwx) : ORIGIN = 0x1FFF0000, LENGTH = 65536
   ROM_USED_RAM (rwx)  : ORIGIN = 0x10000bc8, LENGTH = 21560
-  //RECY_RAM (rwx)  : ORIGIN = 0x10002100, LENGTH = 16128
+  RECY_RAM (rwx)  : ORIGIN = 0x10002100, LENGTH = 16128
   BD_RAM (rwx)  : ORIGIN = 0x10006000, LENGTH = 434176
-  RECY_RAM (rwx)  : ORIGIN = 0x10002100, LENGTH = 7936
-  //BD_RAM (rwx)  : ORIGIN = 0x10004000, LENGTH = 442368
   SDRAM_RAM (rwx)  : ORIGIN = 0x30000000, LENGTH = 2M
 }
 
@@ -128,13 +126,11 @@ SECTIONS
     *(.hal.sdrc.text*)
     *(.hal.gpio.text*)
     *(.fwu.text*)
-    *(.text*)
     *(.wlan.text*)
   } > BD_RAM
 
   .ram_image2.rodata :
   {
-    *(.rodata*)
     *(.wlan.rodata*)
     *(.fwu.rodata*)
   } > BD_RAM
@@ -157,7 +153,6 @@ SECTIONS
     *(.hal.sdrc.data*)    
     *(.hal.gpio.data*)
     *(.fwu.data*)
-    *(.bss*)
     *(.wlan.bss*)
     *(COMMON)
     *(.wlan.bdsram.data*)
@@ -188,6 +183,7 @@ SECTIONS
     *(.p2p.text*)
     *(.wps.text*)
     *(.websocket.text*)
+    *(.text*)
   } > SDRAM_RAM
 
   .sdr_rodata :
@@ -196,6 +192,7 @@ SECTIONS
     *(.p2p.rodata*)
     *(.wps.rodata*)
     *(.websocket.rodata*)
+    *(.rodata*)
   } > SDRAM_RAM
 
   .sdr_data : 
@@ -217,6 +214,7 @@ SECTIONS
     *(.p2p.bss*)
     *(.wps.bss*)
     *(.websocket.bss*)
+    *(.bss*)
     __sdram_bss_end__ = .;
   } > SDRAM_RAM
 

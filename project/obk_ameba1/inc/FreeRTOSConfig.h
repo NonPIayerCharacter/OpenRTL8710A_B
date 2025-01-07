@@ -31,6 +31,7 @@
 #include <stdint.h> 
 extern uint32_t SystemCoreClock; 
 #endif 
+#include "rtl8195a.h"
 
 /*-----------------------------------------------------------
  * Application specific definitions.
@@ -44,6 +45,7 @@ extern uint32_t SystemCoreClock;
  * See http://www.freertos.org/a00110.html.
  *----------------------------------------------------------*/
 
+#define configRECORD_STACK_HIGH_ADDRESS 1
 #define configUSE_PREEMPTION			1
 #define configUSE_IDLE_HOOK				1
 #define configUSE_TICK_HOOK				0
@@ -53,7 +55,7 @@ extern uint32_t SystemCoreClock;
 #ifdef CONFIG_UVC
 #define configTOTAL_HEAP_SIZE			( ( size_t ) ( 110 * 1024 ) )	// use HEAP5
 #else
-#define configTOTAL_HEAP_SIZE			( ( size_t ) ( 45 * 1024 ) )	// use HEAP5
+#define configTOTAL_HEAP_SIZE			( ( size_t ) ( 160 * 1024 ) )	// use HEAP5
 #endif
 #define configMAX_TASK_NAME_LEN			( 10 )
 #define configUSE_TRACE_FACILITY		0
