@@ -724,7 +724,7 @@ __attribute__(( weak )) void vPortSetupTimerInterrupt( void )
 #endif /* configASSERT_DEFINED */
 
 /*-----------------------------------------------------------*/
-void vApplicationIdleHook( void )
+void __attribute__((weak)) vApplicationIdleHook( void )
 {
 	/* Use the idle task to place the CPU into a low power mode.  Greater power
 	saving could be achieved by not including any demo tasks that never block. */
