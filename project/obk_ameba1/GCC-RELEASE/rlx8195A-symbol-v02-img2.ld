@@ -121,6 +121,23 @@ SECTIONS
   .ram_image2.text :
   {
     KEEP(*(.infra.ram.start*))
+
+    /* init data */
+    . = ALIGN(4);
+    PROVIDE (__init_array_start = .);
+    KEEP(*(SORT(.init_array.*)))
+    KEEP(*(.init_array))
+    PROVIDE (__init_array_end = .);
+
+    . = ALIGN(4);
+    KEEP(*(.fini))
+
+    . = ALIGN(4);
+    PROVIDE (__fini_array_start = .);
+    KEEP(*(SORT(.fini_array.*)))
+    KEEP(*(.fini_array))
+    PROVIDE (__fini_array_end = .);
+
     *(.mon.ram.text*)
     *(.hal.flash.text*)    
     *(.hal.sdrc.text*)

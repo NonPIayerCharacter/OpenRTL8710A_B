@@ -14,6 +14,7 @@ CROSS_COMPILE = arm-none-eabi-
 # Compilation tools
 AR = $(CROSS_COMPILE)ar
 CC = $(CROSS_COMPILE)gcc
+CXX = $(CROSS_COMPILE)g++
 AS = $(CROSS_COMPILE)as
 NM = $(CROSS_COMPILE)nm
 LD = $(CROSS_COMPILE)gcc
@@ -531,18 +532,25 @@ SRC_C += ../../../component/common/api/platform/gcc_wrap_time.c
 # -------------------------------------------------------------------
 
 SRC_O = $(patsubst %.c,%.o,$(SRC_C))
+SRC_CPP_O = $(patsubst %.cpp,%.o,$(SRC_CPP))
 DRAM_O = $(patsubst %.c,%.o,$(DRAM_C))
 
 SRC_C_LIST = $(notdir $(SRC_C)) $(notdir $(DRAM_C))
+SRC_CPP_LIST = $(notdir $(SRC_CPP))
 OBJ_LIST = $(addprefix $(OBJ_DIR)/,$(patsubst %.c,%.o,$(SRC_C_LIST)))
+OBJ_LIST += $(addprefix $(OBJ_DIR)/,$(patsubst %.cpp,%.o,$(SRC_CPP_LIST)))
 DEPENDENCY_LIST = $(addprefix $(OBJ_DIR)/,$(patsubst %.c,%.d,$(SRC_C_LIST)))
+DEPENDENCY_LIST += $(addprefix $(OBJ_DIR)/,$(patsubst %.cpp,%.d,$(SRC_CPP_LIST)))
 
 # Compile options
 # -------------------------------------------------------------------
 
 CFLAGS += -DM3 -DCONFIG_PLATFORM_8195A -DGCC_ARMCM3
-CFLAGS += -mcpu=cortex-m3 -mthumb -g2 -w -Os -Wno-pointer-sign -fno-common -fmessage-length=0  -ffunction-sections -fdata-sections -fomit-frame-pointer -fno-short-enums -DF_CPU=166000000L -std=gnu99 -fsigned-char
+CXXFLAGS += -DM3 -DCONFIG_PLATFORM_8195A -DGCC_ARMCM3
+CFLAGS += -mcpu=cortex-m3 -mthumb -g2 -w -Os -Wno-pointer-sign -fno-common -fmessage-length=0  -ffunction-sections -fdata-sections -fomit-frame-pointer -fno-short-enums -DF_CPU=166000000L -std=gnu99 -fsigned-char -MMD
 CFLAGS += -include time64_gcc.h
+
+CXXFLAGS += -Os -std=gnu++11 -mcpu=cortex-m3 -mthumb -fno-short-enums -fno-common -fmessage-length=0 -Wall -fno-exceptions -ffunction-sections -fdata-sections -fomit-frame-pointer -fno-rtti -fno-short-enums -MMD
 
 LFLAGS = 
 LFLAGS += -mcpu=cortex-m3 -mthumb -g --specs=nano.specs -nostartfiles -Wl,-Map=$(BIN_DIR)/application.map -Os -Wl,--gc-sections -Wl,--cref -Wl,--entry=Reset_Handler -Wl,--no-enum-size-warning -Wl,--no-wchar-size-warning
@@ -578,11 +586,11 @@ LFLAGS += -Wl,-wrap,strsep
 
 LIBFLAGS =
 ifeq ($(CONFIG_BT), 1)
-all: LIBFLAGS += -L../../../component/soc/realtek/8195a/misc/bsp/lib/common/GCC/ -l_bt -l_platform -l_wlan -l_btsdk -l_eap -l_http -l_dct -l_p2p -l_wps -l_rtlstd -l_usbd -l_sdcard -l_websocket -l_xmodem -lm -lc -lnosys -lgcc
-mp: LIBFLAGS += -L../../../component/soc/realtek/8195a/misc/bsp/lib/common/GCC/ -l_bt -l_platform -l_wlan_mp -l_btsdk -l_p2p -l_wps -l_rtlstd -l_dct -l_websocket -l_xmodem -lm -lc -lnosys -lgcc
+all: LIBFLAGS += -L../../../component/soc/realtek/8195a/misc/bsp/lib/common/GCC/ -l_bt -l_platform -l_wlan -l_btsdk -l_eap -l_http -l_dct -l_p2p -l_wps -l_rtlstd -l_usbd -l_sdcard -l_websocket -l_xmodem -lm -lc -lnosys -lgcc -lstdc++
+mp: LIBFLAGS += -L../../../component/soc/realtek/8195a/misc/bsp/lib/common/GCC/ -l_bt -l_platform -l_wlan_mp -l_btsdk -l_p2p -l_wps -l_rtlstd -l_dct -l_websocket -l_xmodem -lm -lc -lnosys -lgcc -lstdc++
 else
-all: LIBFLAGS += -L../../../component/soc/realtek/8195a/misc/bsp/lib/common/GCC/ -l_platform -l_wlan -l_eap -l_http -l_dct -l_p2p -l_wps -l_rtlstd -l_usbd -l_sdcard -l_websocket -l_xmodem -lm -lc -lnosys -lgcc
-mp: LIBFLAGS += -L../../../component/soc/realtek/8195a/misc/bsp/lib/common/GCC/ -l_platform -l_wlan_mp -l_p2p -l_wps -l_rtlstd -l_dct -l_websocket -l_xmodem -lm -lc -lnosys -lgcc
+all: LIBFLAGS += -L../../../component/soc/realtek/8195a/misc/bsp/lib/common/GCC/ -l_platform -l_wlan -l_eap -l_http -l_dct -l_p2p -l_wps -l_rtlstd -l_usbd -l_sdcard -l_websocket -l_xmodem -lm -lc -lnosys -lgcc -lstdc++
+mp: LIBFLAGS += -L../../../component/soc/realtek/8195a/misc/bsp/lib/common/GCC/ -l_platform -l_wlan_mp -l_p2p -l_wps -l_rtlstd -l_dct -l_websocket -l_xmodem -lm -lc -lnosys -lgcc -lstdc++
 endif
 
 RAMALL_BIN =
@@ -596,7 +604,7 @@ mp: OTA_BIN = ota_mp.bin
 # -------------------------------------------------------------------
 
 .PHONY: application
-application: prerequirement build_info $(SRC_O) $(DRAM_O)
+application: prerequirement build_info $(SRC_O) $(SRC_CPP_O) $(DRAM_O)
 	$(LD) $(LFLAGS) -o $(BIN_DIR)/$(TARGET).axf  $(OBJ_LIST) $(OBJ_DIR)/ram_1.r.o $(LIBFLAGS) -T./rlx8195A-symbol-v02-img2.ld
 	$(OBJDUMP) -d $(BIN_DIR)/$(TARGET).axf > $(BIN_DIR)/$(TARGET).asm
 
@@ -730,6 +738,13 @@ $(DRAM_O): %.o : %.c
 	$(Q)cp $@ $(OBJ_DIR)/$(notdir $@)
 	$(Q)chmod 777 $(OBJ_DIR)/$(notdir $@)
 
+$(SRC_CPP_O): %.o : %.cpp
+	@echo "compile_cpp $<"
+	$(Q)$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
+	$(Q)$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -MM -MT $@ -MF $(OBJ_DIR)/$(notdir $(patsubst %.o,%.d,$@))
+	$(Q)cp $@ $(OBJ_DIR)/$(notdir $@)
+	$(Q)chmod 777 $(OBJ_DIR)/$(notdir $@)
+
 -include $(DEPENDENCY_LIST)
 
 # Generate build info
@@ -798,6 +813,6 @@ endif
 .PHONY: clean
 clean:
 	rm -rf $(TARGET)
-	rm -f $(SRC_O) $(DRAM_O)
+	rm -f $(SRC_O) $(SRC_CPP_O) $(DRAM_O)
 	rm -f $(patsubst %.o,%.d,$(SRC_O)) $(patsubst %.o,%.d,$(DRAM_O))
 

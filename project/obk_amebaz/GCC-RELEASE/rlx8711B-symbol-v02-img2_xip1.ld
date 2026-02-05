@@ -91,7 +91,7 @@ SECTIONS
 		__ram_image2_text_end__ = .;
 		. = ALIGN(16);	
 	} > BD_RAM
-  
+
 	.ram_image2.bss :
 	{
 		__bss_start__ = .;
@@ -143,6 +143,23 @@ SECTIONS
 		*(.text*)    
 		*(.rodata*)
 		*(.debug_trace*)
+
+		/* Add This for C++ support */
+		. = ALIGN(4);
+		__preinit_array_start = .;
+		KEEP(*(.preinit_array))
+		__preinit_array_end = .;
+		. = ALIGN(4);
+		__init_array_start = .;
+		KEEP(*(SORT(.init_array.*)))
+		KEEP(*(.init_array))
+		__init_array_end = .;
+		. = ALIGN(4);
+		__fini_array_start = .;
+		KEEP(*(SORT(.fini_array.*)))
+		KEEP(*(.fini_array))
+		__fini_array_end = .;	
+		/*-----------------*/
 
 		__flash_text_end__ = .;
 	

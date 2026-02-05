@@ -13,9 +13,10 @@ ota_idx ?= 1
 # Compilation tools
 AR = $(CROSS_COMPILE)ar
 CC = $(CROSS_COMPILE)gcc
+CXX = $(CROSS_COMPILE)g++
 AS = $(CROSS_COMPILE)as
 NM = $(CROSS_COMPILE)nm
-LD = $(CROSS_COMPILE)gcc
+LD = $(CC)
 GDB = $(CROSS_COMPILE)gdb
 OBJCOPY = $(CROSS_COMPILE)objcopy
 OBJDUMP = $(CROSS_COMPILE)objdump
@@ -131,6 +132,7 @@ INCLUDES += -I../../../project/realtek_8195a_gen_project/rtl8195a/sw/lib/sw_lib/
 
 SRC_C =
 DRAM_C =
+SRC_CPP =
 
 #app uart_adapter
 #SRC_C += ../../../component/common/application/uart_adapter/uart_adapter.c
@@ -437,17 +439,24 @@ SRC_C += ../../../component/soc/realtek/8711b/fwlib/ram_lib/rtl8710b_sleepcfg.c
 # -------------------------------------------------------------------
 
 SRC_O = $(patsubst %.c,%.o,$(SRC_C))
+SRC_CPP_O = $(patsubst %.cpp,%.o,$(SRC_CPP))
 DRAM_O = $(patsubst %.c,%.o,$(DRAM_C))
 
 SRC_C_LIST = $(notdir $(SRC_C)) $(notdir $(DRAM_C))
+SRC_CPP_LIST = $(notdir $(SRC_CPP))
 OBJ_LIST = $(addprefix $(OBJ_DIR)/,$(patsubst %.c,%.o,$(SRC_C_LIST)))
+OBJ_LIST += $(addprefix $(OBJ_DIR)/,$(patsubst %.cpp,%.o,$(SRC_CPP_LIST)))
 DEPENDENCY_LIST = $(addprefix $(OBJ_DIR)/,$(patsubst %.c,%.d,$(SRC_C_LIST)))
+DEPENDENCY_LIST += $(addprefix $(OBJ_DIR)/,$(patsubst %.cpp,%.d,$(SRC_CPP_LIST)))
 
 # Compile options
 # -------------------------------------------------------------------
 
 CFLAGS += -DM3 -DCONFIG_PLATFORM_8711B 
-CFLAGS += -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -w -Os -Wno-pointer-sign -fno-common -ffunction-sections -fdata-sections -fomit-frame-pointer -fno-short-enums -DF_CPU=166000000L -fsigned-char
+CXXFLAGS += $(CFLAGS)
+CFLAGS += -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -w -Os -Wno-pointer-sign -fno-common -ffunction-sections -fdata-sections -fomit-frame-pointer -fno-short-enums -DF_CPU=166000000L -fsigned-char -MMD
+
+CXXFLAGS += -Os -std=gnu++11 -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fno-short-enums -fno-common -fmessage-length=0 -Wall -fno-exceptions -ffunction-sections -fdata-sections -fomit-frame-pointer -fno-rtti -fno-short-enums -MMD
 
 LFLAGS = 
 LFLAGS += -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -nostartfiles -specs=nano.specs -Wl,-Map=$(BIN_DIR)/application.map -Os -Wl,--gc-sections -Wl,--cref -Wl,--entry=Reset_Handler -Wl,--no-enum-size-warning -Wl,--no-wchar-size-warning
@@ -484,8 +493,8 @@ LFLAGS += -Wl,-wrap,memset
 LFLAGS += -Wl,-wrap,strsep
 
 LIBFLAGS =
-all: LIBFLAGS += -L../../../component/soc/realtek/8711b/misc/bsp/lib/common/GCC/ -l_platform -l_wlan -l_xmodem -l_eap -l_http -l_wps -l_p2p -l_rtlstd -l_websocket -lm -lc -lnosys -lgcc
-mp: LIBFLAGS += -L../../../component/soc/realtek/8711b/misc/bsp/lib/common/GCC/ -l_platform -l_wlan_mp -l_eap -l_wps -l_p2p -l_rtlstd -lm -lc -lnosys -lgcc
+all: LIBFLAGS += -L../../../component/soc/realtek/8711b/misc/bsp/lib/common/GCC/ -l_platform -l_wlan -l_xmodem -l_eap -l_http -l_wps -l_p2p -l_rtlstd -l_websocket -lm -lc -lnosys -lgcc -lstdc++
+mp: LIBFLAGS += -L../../../component/soc/realtek/8711b/misc/bsp/lib/common/GCC/ -l_platform -l_wlan_mp -l_eap -l_wps -l_p2p -l_rtlstd -lm -lc -lnosys -lgcc -lstdc++
 
 RAMALL_BIN =
 OTA_BIN = 
@@ -507,7 +516,7 @@ mp:OTA_ALL = ota_all_mp.bin
 # -------------------------------------------------------------------
 
 .PHONY: application
-application: prerequirement build_info $(SRC_O) $(DRAM_O)
+application: prerequirement build_info $(SRC_O) $(SRC_CPP_O) $(DRAM_O)
 
 ifeq ("${ota_idx}", "1")
 	$(LD) $(LFLAGS) -o $(BIN_DIR)/$(TARGET).axf  $(OBJ_LIST) $(OBJ_DIR)/boot_all.o $(LIBFLAGS) -T./rlx8711B-symbol-v02-img2_xip1.ld
@@ -617,6 +626,13 @@ $(DRAM_O): %.o : %.c
 	$(Q)cp $@ $(OBJ_DIR)/$(notdir $@)
 	$(Q)chmod 777 $(OBJ_DIR)/$(notdir $@)
 
+$(SRC_CPP_O): %.o : %.cpp
+	@echo "compile_cpp $<"
+	$(Q)$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
+	$(Q)$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -MM -MT $@ -MF $(OBJ_DIR)/$(notdir $(patsubst %.o,%.d,$@))
+	$(Q)cp $@ $(OBJ_DIR)/$(notdir $@)
+	$(Q)chmod 777 $(OBJ_DIR)/$(notdir $@)
+
 -include $(DEPENDENCY_LIST)
 
 # Generate build info
@@ -682,6 +698,6 @@ endif
 .PHONY: clean
 clean:
 	rm -rf $(TARGET)
-	rm -f $(SRC_O) $(DRAM_O)
+	rm -f $(SRC_O) $(SRC_CPP_O) $(DRAM_O)
 	rm -f $(patsubst %.o,%.d,$(SRC_O)) $(patsubst %.o,%.d,$(DRAM_O))
 
